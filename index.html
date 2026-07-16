@@ -488,25 +488,44 @@ let lastLoadKeyFailed = false; // true quando a última loadKey() caiu no fallba
 async function loadKey(key, seedFn){
   let value = null;
   let remoteFailed = false;
+  let remoteRespondedEmpty = false;
   if(isConfigured()){
     try{
       value = await remoteGet(key);
       setSyncStatus('online');
-      if(value !== null) localSet(key, value);
+      if(value !== null){ localSet(key, value); }
+      else { remoteRespondedEmpty = true; }
     }catch(e){
       console.error('sync get error', e);
       setSyncStatus('error', 'sync falhou · usando local');
       remoteFailed = true;
-      value = localGet(key);
     }
   } else {
     value = localGet(key);
   }
+
+  // Se o servidor falhou OU respondeu "vazio", NUNCA aceitamos isso de bandeja:
+  // primeiro conferimos se já existe algo salvo neste navegador. Isso é o que
+  // evita perder dados quando o backend tem algum problema temporário (ex:
+  // planilha recriada, cold start, erro de rede).
+  if(value === null && (remoteFailed || remoteRespondedEmpty)){
+    const cached = localGet(key);
+    if(cached !== null){
+      value = cached;
+      if(remoteRespondedEmpty && isConfigured()){
+        // o servidor disse "não existe" mas temos dado local real:
+        // reenviamos pra ele se autocurar, em vez de aceitar a perda.
+        remoteSet(key, cached).catch(()=>{});
+      }
+    }
+  }
+
   lastLoadKeyFailed = remoteFailed;
   if(value === null || value === undefined){
     if(remoteFailed){
-      // rede instável e sem cache local: devolve vazio SEM gravar nada,
-      // pra não arriscar sobrescrever o que já existe no backend.
+      // rede instável, sem cache local e sem confirmação do servidor:
+      // devolve vazio SEM gravar nada, pra não arriscar sobrescrever
+      // o que já existe no backend.
       return seedFn ? seedFn() : [];
     }
     value = seedFn ? seedFn() : [];
@@ -657,7 +676,19 @@ const APPS_SCRIPT_CODE = `/*** BACKEND DO RUNBOOK NOC - Google Apps Script ***
 const SECRET = 'troque-esta-senha';
 
 function getSheet_(){
-  const ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.create('runbook_noc_data');
+  // guarda o ID da planilha em Script Properties para SEMPRE reabrir a MESMA
+  // planilha entre execuções — sem isso (bug corrigido), cada chamada criava
+  // uma planilha nova e vazia, e por isso os dados "sumiam" a cada refresh.
+  const props = PropertiesService.getScriptProperties();
+  let ssId = props.getProperty('SPREADSHEET_ID');
+  let ss = null;
+  if(ssId){
+    try{ ss = SpreadsheetApp.openById(ssId); }catch(e){ ss = null; }
+  }
+  if(!ss){
+    ss = SpreadsheetApp.create('runbook_noc_data');
+    props.setProperty('SPREADSHEET_ID', ss.getId());
+  }
   let sh = ss.getSheetByName('runbook_data');
   if(!sh){
     sh = ss.insertSheet('runbook_data');
