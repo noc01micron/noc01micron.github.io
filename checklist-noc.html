@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Runbook NOC — Checklists &amp; Base de Conhecimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1014;
+    --panel:#12191F;
+    --panel-2:#1A232A;
+    --panel-3:#212C34;
+    --border:#26323A;
+    --text:#E7EDF0;
+    --muted:#8A98A3;
+    --muted-2:#5E6C76;
+    --accent:#22D3A6;
+    --accent-dim:#173832;
+    --amber:#F5A623;
+    --amber-dim:#3A2E10;
+    --red:#FF5D5D;
+    --red-dim:#3A1A1A;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --sans:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    height:100vh;
+    overflow:hidden;
+  }
+  #root{height:100vh;display:flex;flex-direction:column;}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:24px;
+    padding:0 20px;height:52px;flex:none;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    font-family:var(--mono);font-weight:700;letter-spacing:.5px;font-size:13px;color:var(--text);
+  }
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex:none;}
+  .tabs{display:flex;gap:2px;margin-left:8px;}
+  .tab-btn{
+    font-family:var(--mono);font-size:12px;letter-spacing:.3px;
+    color:var(--muted);background:transparent;border:1px solid transparent;
+    padding:7px 14px;border-radius:6px;cursor:pointer;transition:.15s;
+  }
+  .tab-btn:hover{color:var(--text);background:var(--panel-2);}
+  .tab-btn.active{color:var(--accent);background:var(--accent-dim);border-color:#1E5548;}
+  .topbar-spacer{flex:1;}
+  .save-indicator{font-family:var(--mono);font-size:11px;color:var(--muted-2);display:flex;align-items:center;gap:6px;}
+  .save-indicator .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-2);}
+  .save-indicator.saved .dot{background:var(--accent);}
+
+  /* ---------- LAYOUT ---------- */
+  .layout{flex:1;display:flex;min-height:0;}
+  .sidebar{
+    width:290px;flex:none;border-right:1px solid var(--border);
+    background:var(--panel);display:flex;flex-direction:column;min-height:0;
+  }
+  .sidebar-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);}
+  .sidebar-title{font-family:var(--mono);font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+  .search-input{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;
+    padding:8px 10px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;
+  }
+  .search-input:focus{border-color:var(--accent);}
+  .new-btn{
+    width:100%;margin-top:10px;background:var(--accent-dim);border:1px solid #1E5548;color:var(--accent);
+    font-family:var(--mono);font-size:12px;font-weight:600;padding:9px;border-radius:6px;cursor:pointer;transition:.15s;
+  }
+  .new-btn:hover{background:#1E5548;}
+  .new-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .list{flex:1;overflow-y:auto;padding:8px;}
+  .list-item{
+    padding:10px 11px;border-radius:7px;cursor:pointer;margin-bottom:4px;
+    border:1px solid transparent;transition:.12s;
+  }
+  .list-item:hover{background:var(--panel-2);}
+  .list-item.active{background:var(--panel-3);border-color:var(--border);}
+  .list-item-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.3;}
+  .list-item-meta{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .badge{display:inline-block;padding:1px 6px;border-radius:4px;background:var(--panel-2);color:var(--muted);font-size:10px;}
+  .list-empty{padding:30px 16px;text-align:center;color:var(--muted-2);font-size:12.5px;line-height:1.6;}
+
+  /* ---------- MAIN ---------- */
+  .main{flex:1;overflow-y:auto;min-height:0;}
+  .empty-state{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted-2);gap:10px;}
+  .empty-state .glyph{font-family:var(--mono);font-size:34px;color:var(--panel-3);}
+  .empty-state p{font-size:13.5px;max-width:320px;text-align:center;line-height:1.6;}
+
+  .doc{max-width:760px;margin:0 auto;padding:32px 36px 80px;}
+  .doc-header{border-bottom:1px solid var(--border);padding-bottom:18px;margin-bottom:22px;}
+  .doc-eyebrow{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .doc-title-input{
+    width:100%;background:transparent;border:none;outline:none;color:var(--text);
+    font-family:var(--sans);font-size:24px;font-weight:700;padding:2px 0;border-bottom:1px solid transparent;
+  }
+  .doc-title-input:focus{border-bottom:1px solid var(--border);}
+  .doc-title-input::placeholder{color:var(--muted-2);}
+  .meta-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .meta-field{display:flex;flex-direction:column;gap:4px;}
+  .meta-field label{font-family:var(--mono);font-size:10px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.6px;}
+  .meta-field input{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:6px 9px;
+    color:var(--text);font-size:12.5px;font-family:var(--sans);outline:none;min-width:150px;
+  }
+  .meta-field input:focus{border-color:var(--accent);}
+
+  .toolrow{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .btn{
+    font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.3px;
+    padding:8px 13px;border-radius:6px;cursor:pointer;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);transition:.13s;display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{background:var(--panel-3);}
+  .btn-accent{background:var(--accent-dim);border-color:#1E5548;color:var(--accent);}
+  .btn-accent:hover{background:#1E5548;}
+  .btn-red{color:var(--red);}
+  .btn-red:hover{background:var(--red-dim);}
+  .btn-ghost{background:transparent;}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+
+  .progress-wrap{margin-bottom:20px;}
+  .progress-track{height:6px;background:var(--panel-2);border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+  .progress-fill{height:100%;background:var(--accent);transition:width .25s;}
+  .progress-label{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:6px;}
+
+  .items{display:flex;flex-direction:column;gap:8px;}
+  .item{
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 13px;
+    display:flex;gap:11px;align-items:flex-start;transition:.15s;
+  }
+  .item.checked{border-color:#1E5548;background:linear-gradient(0deg,var(--accent-dim),var(--accent-dim)),var(--panel);background-blend-mode:overlay;}
+  .item-num{font-family:var(--mono);font-size:11px;color:var(--muted-2);flex:none;width:22px;padding-top:2px;}
+  .checkbox{
+    flex:none;width:19px;height:19px;border-radius:5px;border:1.5px solid var(--border);
+    background:var(--panel-2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    margin-top:1px;transition:.13s;color:transparent;font-size:13px;font-weight:700;
+  }
+  .checkbox.on{background:var(--accent);border-color:var(--accent);color:#0B1014;}
+  .checkbox.small{width:15px;height:15px;font-size:10px;border-radius:4px;}
+  .checkbox.auto{cursor:default;opacity:.85;}
+  .item-body{flex:1;min-width:0;}
+  .item-text-view{font-size:13.5px;line-height:1.5;cursor:text;}
+  .item-text-view.done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted-2);}
+  .item-note{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:5px;
+    margin-top:7px;padding:6px 8px;font-size:12px;color:var(--text);font-family:var(--sans);
+    outline:none;resize:none;min-height:28px;
+  }
+  .item-note:focus{border-color:var(--accent);}
+  .item-note::placeholder{color:var(--muted-2);}
+  .item-time{font-family:var(--mono);font-size:10px;color:var(--muted-2);margin-top:5px;}
+  .item-actions{display:flex;gap:5px;flex:none;opacity:0;transition:.13s;}
+  .item:hover .item-actions{opacity:1;}
+  .icon-btn{
+    width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:var(--panel-2);
+    color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none;
+  }
+  .icon-btn:hover{color:var(--text);background:var(--panel-3);}
+
+  .add-item-row{margin-top:10px;}
+  .add-item-input{
+    width:100%;background:var(--panel-2);border:1px dashed var(--border);border-radius:8px;
+    padding:11px 13px;color:var(--text);font-size:13.5px;font-family:var(--sans);outline:none;
+  }
+  .add-item-input:focus{border-color:var(--accent);border-style:solid;}
+  .add-item-input::placeholder{color:var(--muted-2);}
+
+  /* sub-items */
+  .subitems{margin-top:8px;padding-left:10px;border-left:2px solid var(--border);display:flex;flex-direction:column;gap:5px;}
+  .subitem{display:flex;align-items:center;gap:8px;}
+  .subitem-text-view{font-size:12.5px;color:var(--text);cursor:text;flex:1;}
+  .subitem-text-view.done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted-2);}
+  .sub-remove{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:11px;flex:none;}
+  .sub-remove:hover{color:var(--red);}
+  .add-subitem-input{
+    width:100%;background:transparent;border:1px dashed var(--border);border-radius:5px;
+    padding:5px 8px;color:var(--muted);font-size:12px;font-family:var(--sans);outline:none;margin-top:2px;
+  }
+  .add-subitem-input:focus{border-color:var(--accent);color:var(--text);}
+  .subitem-hint{font-family:var(--mono);font-size:9.5px;color:var(--muted-2);margin-top:6px;letter-spacing:.3px;}
+
+  .section-hint{font-size:12px;color:var(--muted-2);line-height:1.6;margin-bottom:16px;}
+
+  /* ---------- KB / AUTH ---------- */
+  .auth-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--panel);border:1px solid var(--border);border-radius:9px;
+    padding:10px 14px;margin-bottom:18px;flex-wrap:wrap;
+  }
+  .auth-info{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+  .role-pill{font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:20px;letter-spacing:.4px;text-transform:uppercase;}
+  .role-pill.admin{background:var(--accent-dim);color:var(--accent);border:1px solid #1E5548;}
+  .role-pill.editor{background:var(--amber-dim);color:var(--amber);border:1px solid #5A430E;}
+  .role-pill.viewer{background:var(--panel-2);color:var(--muted);border:1px solid var(--border);}
+
+  .auth-card{
+    max-width:340px;margin:60px auto;background:var(--panel);border:1px solid var(--border);
+    border-radius:11px;padding:26px;
+  }
+  .auth-card h3{margin:0 0 6px;font-size:16px;}
+  .auth-card p{margin:0 0 18px;font-size:12px;color:var(--muted-2);line-height:1.6;}
+  .auth-field{margin-bottom:12px;}
+  .auth-field label{display:block;font-family:var(--mono);font-size:10px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+  .auth-field input{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;
+    padding:9px 10px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;
+  }
+  .auth-field input:focus{border-color:var(--accent);}
+  .auth-error{font-size:11.5px;color:var(--red);margin-bottom:10px;min-height:14px;}
+  .auth-switch{font-size:11.5px;color:var(--muted-2);margin-top:14px;text-align:center;}
+  .auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+
+  .kb-card{
+    background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:15px 16px;margin-bottom:10px;
+  }
+  .kb-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .kb-title-input{
+    flex:1;background:transparent;border:none;outline:none;color:var(--text);
+    font-size:15px;font-weight:700;font-family:var(--sans);border-bottom:1px solid transparent;padding:2px 0;
+  }
+  .kb-title-input:focus{border-bottom:1px solid var(--border);}
+  .kb-title-input:disabled{color:var(--text);opacity:1;}
+  .kb-tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;align-items:center;}
+  .tag-pill{font-family:var(--mono);font-size:10px;background:var(--panel-2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+  .tag-pill button{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:11px;padding:0;line-height:1;}
+  .tag-input{
+    background:transparent;border:none;outline:none;color:var(--muted);font-family:var(--mono);font-size:10.5px;
+    width:90px;
+  }
+  .kb-solution{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:7px;
+    padding:10px 11px;color:var(--text);font-size:13px;font-family:var(--sans);line-height:1.6;
+    outline:none;resize:vertical;min-height:70px;margin-top:6px;
+  }
+  .kb-solution:focus{border-color:var(--accent);}
+  .kb-solution:disabled{color:var(--text);opacity:1;background:var(--panel-2);cursor:default;}
+  .kb-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .copy-btn{font-family:var(--mono);font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:5px;padding:5px 9px;cursor:pointer;}
+  .copy-btn:hover{color:var(--accent);border-color:#1E5548;}
+  .copy-btn.copied{color:var(--accent);border-color:#1E5548;}
+
+  .readonly-note{font-family:var(--mono);font-size:10.5px;color:var(--muted-2);margin-top:8px;}
+
+  .user-table{width:100%;border-collapse:collapse;margin-top:10px;}
+  .user-table th{text-align:left;font-family:var(--mono);font-size:10px;color:var(--muted-2);text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border);}
+  .user-table td{padding:7px 8px;font-size:12.5px;border-bottom:1px solid var(--border);}
+  .user-table select{background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 6px;font-size:11.5px;font-family:var(--sans);}
+
+  /* ---------- SETTINGS / SYNC ---------- */
+  .icon-btn-top{
+    width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--panel-2);
+    color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;
+  }
+  .icon-btn-top:hover{color:var(--text);background:var(--panel-3);}
+  .sync-pill{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;letter-spacing:.3px;display:flex;align-items:center;gap:5px;border:1px solid var(--border);color:var(--muted-2);}
+  .sync-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-2);}
+  .sync-pill.online{color:var(--accent);border-color:#1E5548;} .sync-pill.online .dot{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+  .sync-pill.offline{color:var(--amber);border-color:#5A430E;} .sync-pill.offline .dot{background:var(--amber);}
+  .sync-pill.error{color:var(--red);border-color:#5A2222;} .sync-pill.error .dot{background:var(--red);}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(4,6,8,.65);display:flex;align-items:center;justify-content:center;
+    z-index:100;
+  }
+  .modal-card{
+    width:480px;max-width:92vw;max-height:86vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:24px 26px;
+  }
+  .modal-card h3{margin:0 0 4px;font-size:16px;}
+  .modal-card .modal-sub{font-size:12px;color:var(--muted-2);margin:0 0 18px;line-height:1.6;}
+  .modal-card label{display:block;font-family:var(--mono);font-size:10px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+  .modal-card input{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;
+    padding:9px 10px;color:var(--text);font-size:12.5px;font-family:var(--mono);outline:none;margin-bottom:14px;
+  }
+  .modal-card input:focus{border-color:var(--accent);}
+  .modal-actions{display:flex;gap:8px;margin-top:4px;}
+  .modal-status{font-size:11.5px;margin:8px 0 4px;min-height:16px;}
+  .modal-status.ok{color:var(--accent);}
+  .modal-status.err{color:var(--red);}
+  .modal-divider{border-top:1px solid var(--border);margin:18px 0;padding-top:16px;}
+  .modal-steps{font-size:11.5px;color:var(--muted);line-height:1.9;padding-left:18px;margin:0;}
+  .modal-steps code{background:var(--panel-2);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:10.5px;color:var(--accent);}
+  .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted-2);font-size:16px;cursor:pointer;}
+
+  /* ---------- PRINT ---------- */
+  #print-area{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #print-area, #print-area *{visibility:visible;}
+    #print-area{
+      display:block;position:absolute;top:0;left:0;width:100%;
+      color:#111;background:#fff;font-family:'Inter',Arial,sans-serif;padding:0;
+    }
+    .p-header{border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:18px;}
+    .p-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#555;margin-bottom:6px;}
+    .p-title{font-size:22px;font-weight:800;margin:0 0 10px;}
+    .p-meta{display:flex;gap:24px;font-size:11px;color:#333;flex-wrap:wrap;}
+    .p-meta b{color:#000;}
+    .p-progress{font-family:'JetBrains Mono',monospace;font-size:11px;margin:14px 0 6px;color:#333;}
+    .p-item{padding:9px 0;border-bottom:1px solid #ddd;break-inside:avoid;}
+    .p-item-row{display:flex;gap:10px;}
+    .p-box{flex:none;width:14px;height:14px;border:1.5px solid #111;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+    .p-item-text{font-size:13px;line-height:1.5;}
+    .p-item-text.done{color:#333;}
+    .p-sub{display:flex;gap:8px;margin:4px 0 0 24px;align-items:center;}
+    .p-sub .p-box{width:11px;height:11px;font-size:9px;}
+    .p-sub-text{font-size:11.5px;color:#333;}
+    .p-note{font-size:11px;color:#555;margin-top:3px;font-style:italic;margin-left:24px;}
+    .p-time{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#888;margin-top:3px;margin-left:24px;}
+    .p-footer{margin-top:26px;padding-top:12px;border-top:1px solid #ccc;font-size:10px;color:#888;display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;}
+    @page{margin:16mm;}
+  }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>RUNBOOK.NOC</div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="checklists" onclick="switchTab('checklists')">Checklists</button>
+      <button class="tab-btn" data-tab="kb" onclick="switchTab('kb')">Base de Conhecimento</button>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="sync-pill offline" id="syncPill"><span class="dot"></span><span id="syncText">modo local</span></div>
+    <div class="icon-btn-top" onclick="openSettings()" title="Configurar sincronização compartilhada">⚙</div>
+  </div>
+
+  <div class="layout">
+    <!-- CHECKLISTS TAB -->
+    <div class="sidebar" id="sidebar-checklists" style="display:flex;">
+      <div class="sidebar-head">
+        <div class="sidebar-title">Processos</div>
+        <input class="search-input" id="searchProc" placeholder="Buscar processo..." oninput="renderProcList()">
+        <button class="new-btn" id="newProcBtn" onclick="criarProcesso()">+ novo processo</button>
+      </div>
+      <div class="list" id="procList"></div>
+    </div>
+
+    <!-- KB TAB -->
+    <div class="sidebar" id="sidebar-kb" style="display:none;">
+      <div class="sidebar-head">
+        <div class="sidebar-title">Entradas da KB</div>
+        <input class="search-input" id="searchKb" placeholder="Buscar problema/tag..." oninput="renderKbList()">
+        <button class="new-btn" id="newKbBtn" onclick="criarKb()">+ nova entrada</button>
+      </div>
+      <div class="list" id="kbList"></div>
+    </div>
+
+    <div class="main">
+      <div id="view-checklists"></div>
+      <div id="view-kb" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="print-area"></div>
+<div id="settingsModalWrap"></div>
+
+<script>
+/* ---------------- STATE & STORAGE ---------------- */
+let processos = [];       // MODELOS de checklist (mestre) — só admin/editor edita a estrutura
+let kbEntries = [];
+let kbUsers = [];
+let userProgress = {};    // progresso PESSOAL do usuário logado: {[procId]: {items:{id:{checked,nota,horario}}, subitems:{id:{checked}}}}
+let currentUser = null; // {username, role}
+let authView = 'login'; // login | register
+let activeProcId = null;
+let activeKbId = null;
+let activeTab = 'checklists';
+
+const uid = () => Math.random().toString(36).slice(2,10);
+const nowStr = () => new Date().toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit'});
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ===================================================================
+   CAMADA DE ARMAZENAMENTO
+   - Funciona sozinho (localStorage do navegador) sem nenhuma configuração.
+   - Se um backend do Google Apps Script for configurado (⚙ Configurações),
+     todos os dados (processos, KB, usuários) passam a ser sincronizados
+     e ficam compartilhados entre qualquer pessoa que use a mesma URL.
+   =================================================================== */
+
+/* ⚙️ CONFIGURAÇÃO FIXA DO BACKEND — edite estas duas linhas com um editor de texto
+   (Bloco de Notas / Notepad, ou VSCode) e salve. Assim TODO MUNDO que abrir este
+   mesmo arquivo .html já conecta automaticamente no mesmo backend, sem precisar
+   clicar em Configurações nem depender do navegador lembrar de nada.
+   Se deixar em branco (''), o app funciona só localmente até alguém configurar
+   pela tela de Configurações (⚙) — mas aí cada navegador guarda por conta própria,
+   o que é frágil (é exatamente o problema que você teve). Preencher aqui é o jeito robusto. */
+const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycby6yCJD7W6Xn8HKyRkc2e97MV551Olnj97eTo5e2f_uDcxMB9JrgzYWhaZZK7aINdrbPA/exec';
+const DEFAULT_SYNC_SECRET = 'mOm@115$';
+
+const LOCAL_PREFIX = 'runbook_noc_';
+const CONFIG_KEY = 'runbook_noc_sync_config';
+const SESSION_KEY = 'runbook_noc_session'; // mantém o login neste navegador entre recarregamentos
+let syncConfig = null; // {url, secret}
+let syncStatus = 'offline'; // offline | online | error
+
+function loadSyncConfig(){
+  // 1) prioridade: config embutida no arquivo (fixa, igual pra todo mundo)
+  if(DEFAULT_SYNC_URL){
+    syncConfig = {url: DEFAULT_SYNC_URL, secret: DEFAULT_SYNC_SECRET};
+    return;
+  }
+  // 2) senão, cai pro que foi salvo manualmente nas Configurações deste navegador
+  try{ syncConfig = JSON.parse(localStorage.getItem(CONFIG_KEY)); }catch(e){ syncConfig = null; }
+}
+function isConfigured(){ return !!(syncConfig && syncConfig.url); }
+
+function setSyncStatus(state, label){
+  syncStatus = state;
+  const pill = document.getElementById('syncPill');
+  const txt = document.getElementById('syncText');
+  if(!pill) return;
+  pill.classList.remove('online','offline','error');
+  pill.classList.add(state);
+  txt.textContent = label || (state==='online' ? 'sincronizado' : state==='error' ? 'erro de sync' : 'modo local');
+}
+
+function localGet(key){
+  try{ const v = localStorage.getItem(LOCAL_PREFIX+key); return v ? JSON.parse(v) : null; }catch(e){ return null; }
+}
+function localSet(key, val){
+  try{ localStorage.setItem(LOCAL_PREFIX+key, JSON.stringify(val)); }catch(e){ console.error(e); }
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+async function remoteGet(key){
+  const url = `${syncConfig.url}?action=get&key=${encodeURIComponent(key)}&t=${Date.now()}`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('remote get failed');
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    return data.value ? JSON.parse(data.value) : null;
+  }catch(e){
+    // 1 nova tentativa após uma pequena pausa — o Apps Script às vezes demora
+    // pra "acordar" (cold start) e a primeira chamada falha por timeout.
+    await sleep(900);
+    const res2 = await fetch(url);
+    if(!res2.ok) throw new Error('remote get failed');
+    const data2 = await res2.json();
+    if(data2.error) throw new Error(data2.error);
+    return data2.value ? JSON.parse(data2.value) : null;
+  }
+}
+async function remoteSet(key, val){
+  const body = JSON.stringify({action:'set', key, value: JSON.stringify(val), secret: syncConfig.secret});
+  const opts = { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body };
+  try{
+    const res = await fetch(syncConfig.url, opts);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    return true;
+  }catch(e){
+    await sleep(900);
+    const res2 = await fetch(syncConfig.url, opts);
+    const data2 = await res2.json();
+    if(data2.error) throw new Error(data2.error);
+    return true;
+  }
+}
+
+/** Lê um valor: tenta remoto (se configurado), sempre cai para cache local.
+ *  IMPORTANTE: se o remoto falhar (rede/cold-start do Apps Script) e não houver
+ *  cache local, NÃO inventamos/gravamos um valor vazio — isso apagaria dados
+ *  reais do backend na próxima sincronização. Só semeamos quando temos certeza
+ *  de que o dado realmente não existe (remoto respondeu OK e veio nulo, ou
+ *  não há sync configurado). */
+let lastLoadKeyFailed = false; // true quando a última loadKey() caiu no fallback por falha de rede (não por ausência real do dado)
+async function loadKey(key, seedFn){
+  let value = null;
+  let remoteFailed = false;
+  if(isConfigured()){
+    try{
+      value = await remoteGet(key);
+      setSyncStatus('online');
+      if(value !== null) localSet(key, value);
+    }catch(e){
+      console.error('sync get error', e);
+      setSyncStatus('error', 'sync falhou · usando local');
+      remoteFailed = true;
+      value = localGet(key);
+    }
+  } else {
+    value = localGet(key);
+  }
+  lastLoadKeyFailed = remoteFailed;
+  if(value === null || value === undefined){
+    if(remoteFailed){
+      // rede instável e sem cache local: devolve vazio SEM gravar nada,
+      // pra não arriscar sobrescrever o que já existe no backend.
+      return seedFn ? seedFn() : [];
+    }
+    value = seedFn ? seedFn() : [];
+    await saveKey(key, value);
+  }
+  return value;
+}
+
+/** Grava um valor: sempre local imediatamente, e tenta remoto se configurado. */
+async function saveKey(key, value){
+  localSet(key, value);
+  if(!isConfigured()) return;
+  setSyncStatus('online', 'sincronizando...');
+  try{
+    await remoteSet(key, value);
+    setSyncStatus('online');
+  }catch(e){
+    console.error('sync set error', e);
+    setSyncStatus('error', 'sync falhou · salvo local');
+  }
+}
+
+const saveProcessos = () => saveKey('processos', processos);
+const saveKb = () => saveKey('kb', kbEntries);
+const saveUsers = () => saveKey('kb_users', kbUsers);
+
+/* ---------------- CONFIGURAÇÕES / MODAL DE SYNC ---------------- */
+function openSettings(){
+  const wrap = document.getElementById('settingsModalWrap');
+  const cfg = syncConfig || {url:'', secret:''};
+  const locked = !!DEFAULT_SYNC_URL;
+
+  const connectionBlock = locked ? `
+        <div class="modal-status ok" style="margin-bottom:6px;">✓ Este arquivo já vem com a conexão fixa embutida — conecta sozinho, sem precisar clicar em nada.</div>
+        <label>URL do Web App (fixa no arquivo)</label>
+        <input value="${escapeAttr(DEFAULT_SYNC_URL)}" disabled>
+        <div class="modal-status" id="cfgStatus"></div>
+        <div class="modal-actions">
+          <button class="btn" onclick="testSyncConnection()">Testar conexão</button>
+        </div>
+        <div class="readonly-note" style="margin-top:10px;">Pra trocar o backend, edite as constantes <code style="background:var(--panel-2);padding:1px 5px;border-radius:4px;">DEFAULT_SYNC_URL</code> / <code style="background:var(--panel-2);padding:1px 5px;border-radius:4px;">DEFAULT_SYNC_SECRET</code> no início do arquivo .html num editor de texto.</div>
+  ` : `
+        <label>URL do Web App (Apps Script)</label>
+        <input id="cfgUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" value="${escapeAttr(cfg.url||'')}">
+
+        <label>Senha do backend (secret)</label>
+        <input id="cfgSecret" placeholder="defina uma senha só sua" value="${escapeAttr(cfg.secret||'')}">
+
+        <div class="modal-status" id="cfgStatus"></div>
+
+        <div class="modal-actions">
+          <button class="btn btn-accent" onclick="saveSyncSettings()">Salvar e conectar</button>
+          <button class="btn" onclick="testSyncConnection()">Testar conexão</button>
+          ${isConfigured() ? '<button class="btn btn-red" onclick="disconnectSync()">Desconectar</button>' : ''}
+        </div>
+        <div class="readonly-note" style="margin-top:10px;">⚠️ Essa configuração fica só neste navegador (localStorage). Se você baixar o arquivo de novo ou abrir em outro navegador/computador, vai precisar configurar de novo aqui. Pra evitar isso, edite as constantes <code style="background:var(--panel-2);padding:1px 5px;border-radius:4px;">DEFAULT_SYNC_URL</code> / <code style="background:var(--panel-2);padding:1px 5px;border-radius:4px;">DEFAULT_SYNC_SECRET</code> no início do arquivo — assim fica embutido e ninguém mais precisa mexer aqui.</div>
+  `;
+
+  wrap.innerHTML = `
+    <div class="modal-overlay" id="settingsOverlay" onclick="if(event.target===this) closeSettings()">
+      <div class="modal-card" style="position:relative;">
+        <button class="modal-close" onclick="closeSettings()">✕</button>
+        <h3>Sincronização compartilhada</h3>
+        <p class="modal-sub">Sem configurar nada, este checklist funciona sozinho no navegador (localStorage) — só nesse computador. Para compartilhar com outras pessoas e acessar de qualquer lugar, conecte um backend gratuito no Google Apps Script (usa seu próprio Google Drive, sem custo).</p>
+
+        ${connectionBlock}
+
+        <div class="modal-divider">
+          <div class="modal-sub" style="margin-bottom:10px;"><b style="color:var(--text)">Como criar o backend gratuito (5 minutos):</b></div>
+          <ol class="modal-steps">
+            <li>Acesse <code>script.google.com</code> logado na sua conta Google e crie um novo projeto.</li>
+            <li>Apague o conteúdo do editor e cole o código do arquivo <code>backend-apps-script.gs</code> (baixe abaixo).</li>
+            <li>No topo do código, defina uma <code>SECRET</code> (senha) igual à que você colocou no campo acima.</li>
+            <li>Clique em <b>Implantar → Nova implantação → tipo "App da Web"</b>.</li>
+            <li>Em "Quem pode acessar", escolha <code>Qualquer pessoa</code>. Clique em Implantar e autorize.</li>
+            <li>Copie a URL gerada (termina em <code>/exec</code>) e cole no campo "URL do Web App" acima — <b>ou, melhor ainda, cole direto nas constantes <code>DEFAULT_SYNC_URL</code> no início do arquivo .html</b>, assim já vem pronto pra quem for usar.</li>
+            <li>Hospede o .html num link fixo (ex: Netlify Drop, GitHub Pages) e mande esse link pra equipe — evite redistribuir o arquivo baixado toda hora.</li>
+          </ol>
+          <button class="btn" style="margin-top:12px;" onclick="downloadAppsScript()">⬇ baixar backend-apps-script.gs</button>
+          <div class="readonly-note" style="margin-top:12px;">⚠️ Isso não é um servidor de alta segurança — é um controle simples, adequado para organizar a equipe do NOC. Não guarde dados sigilosos/sensíveis aqui.</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function closeSettings(){
+  const wrap = document.getElementById('settingsModalWrap');
+  if(wrap) wrap.innerHTML = '';
+}
+async function saveSyncSettings(){
+  const url = document.getElementById('cfgUrl').value.trim();
+  const secret = document.getElementById('cfgSecret').value.trim();
+  const status = document.getElementById('cfgStatus');
+  if(!url){ status.className='modal-status err'; status.textContent='Informe a URL do Web App.'; return; }
+  syncConfig = {url, secret};
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(syncConfig));
+  status.className='modal-status'; status.textContent='Conectando e enviando dados locais...';
+  try{
+    // envia o que já existe localmente para o backend, sem perder nada
+    await saveKey('processos', processos);
+    await saveKey('kb', kbEntries);
+    await saveKey('kb_users', kbUsers);
+    status.className='modal-status ok'; status.textContent='✓ Conectado! Os dados agora são compartilhados por essa URL.';
+    setSyncStatus('online');
+    setTimeout(closeSettings, 1200);
+  }catch(e){
+    status.className='modal-status err'; status.textContent='Falhou: ' + e.message + ' — confira a URL/implantação.';
+  }
+}
+async function testSyncConnection(){
+  const cfgUrlEl = document.getElementById('cfgUrl');
+  const url = cfgUrlEl ? cfgUrlEl.value.trim() : (DEFAULT_SYNC_URL || (syncConfig && syncConfig.url) || '');
+  const status = document.getElementById('cfgStatus');
+  if(!url){ status.className='modal-status err'; status.textContent='Informe a URL do Web App.'; return; }
+  status.className='modal-status'; status.textContent='Testando...';
+  try{
+    const res = await fetch(`${url}?action=get&key=ping&t=${Date.now()}`);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    status.className='modal-status ok'; status.textContent='✓ Backend respondeu com sucesso.';
+  }catch(e){
+    status.className='modal-status err'; status.textContent='✕ Não foi possível conectar: ' + e.message;
+  }
+}
+function disconnectSync(){
+  if(!confirm('Desconectar a sincronização? Os dados continuam salvos localmente neste navegador.')) return;
+  syncConfig = null;
+  localStorage.removeItem(CONFIG_KEY);
+  setSyncStatus('offline', 'modo local');
+  closeSettings();
+}
+function downloadAppsScript(){
+  const code = APPS_SCRIPT_CODE;
+  const blob = new Blob([code], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backend-apps-script.gs';
+  a.click();
+}
+const APPS_SCRIPT_CODE = `/*** BACKEND DO RUNBOOK NOC - Google Apps Script ***
+ * 1) Cole este codigo em script.google.com (novo projeto)
+ * 2) Troque SECRET abaixo pela mesma senha usada no checklist
+ * 3) Implantar > Nova implantacao > App da Web > Qualquer pessoa > Implantar
+ * 4) Copie a URL /exec e cole no checklist em Configuracoes
+ * Os dados ficam guardados numa planilha Google Sheets criada automaticamente
+ * no seu Google Drive.
+ ***/
+const SECRET = 'troque-esta-senha';
+
+function getSheet_(){
+  const ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.create('runbook_noc_data');
+  let sh = ss.getSheetByName('runbook_data');
+  if(!sh){
+    sh = ss.insertSheet('runbook_data');
+    sh.appendRow(['key','value']);
+  }
+  return sh;
+}
+
+function findRow_(sh, key){
+  const data = sh.getDataRange().getValues();
+  for(let i=1;i<data.length;i++){
+    if(data[i][0] === key) return i+1;
+  }
+  return -1;
+}
+
+function doGet(e){
+  const key = e.parameter.key;
+  const sh = getSheet_();
+  const row = findRow_(sh, key);
+  const value = row === -1 ? null : sh.getRange(row,2).getValue();
+  return ContentService.createTextOutput(JSON.stringify({value: value || null}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e){
+  try{
+    const body = JSON.parse(e.postData.contents);
+    if(body.secret !== SECRET){
+      return ContentService.createTextOutput(JSON.stringify({error:'senha invalida'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const sh = getSheet_();
+    const row = findRow_(sh, body.key);
+    if(row === -1){
+      sh.appendRow([body.key, body.value]);
+    } else {
+      sh.getRange(row,2).setValue(body.value);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }catch(err){
+    return ContentService.createTextOutput(JSON.stringify({error: err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+`;
+
+async function loadAll(){
+  loadSyncConfig();
+  setSyncStatus(isConfigured() ? 'online' : 'offline', isConfigured() ? 'sincronizando...' : 'modo local');
+
+  processos = await loadKey('processos', seedProcessos);
+  kbEntries = await loadKey('kb', seedKb);
+  kbUsers = await loadKey('kb_users', () => []);
+  const kbUsersLoadFailed = lastLoadKeyFailed; // se a rede falhou aqui, não podemos confiar que a lista está completa
+
+  restoreSession(kbUsersLoadFailed);
+  if(currentUser){
+    userProgress = await loadKey('progress_'+currentUser.username, () => ({}));
+  }
+
+  if(processos.length) activeProcId = processos[0].id;
+  if(kbEntries.length) activeKbId = kbEntries[0].id;
+
+  renderProcList();
+  renderChecklistView();
+  renderKbList();
+  renderKbView();
+}
+function restoreSession(kbUsersLoadFailed){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return;
+    const sess = JSON.parse(raw);
+    const u = kbUsers.find(x=>x.username===sess.username);
+    if(u){
+      currentUser = {username:u.username, role:u.role}; // papel sempre atualizado a partir da lista de usuários
+    } else if(kbUsersLoadFailed){
+      // a lista de usuários não pôde ser confirmada agora (sync falhou) —
+      // mantemos a sessão com o papel salvo da última vez, em vez de deslogar à toa.
+      currentUser = {username: sess.username, role: sess.role};
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }catch(e){ localStorage.removeItem(SESSION_KEY); }
+}
+
+function seedProcessos(){
+  return [{
+    id: uid(),
+    titulo: 'Ativação de Nova Central OLT',
+    categoria: 'Ativação',
+    site: '',
+    itens: [
+      {id: uid(), texto:'Verificar comunicação com a OLT',
+        subitens:[
+          {id:uid(), texto:'Ping na gerência da OLT'},
+          {id:uid(), texto:'Comunidade SNMP respondendo'},
+          {id:uid(), texto:'Acesso à interface de gerência (web/CLI)'}
+        ]},
+      {id: uid(), texto:'Checar cadastro da OLT no sistema de gestão', subitens:[]},
+      {id: uid(), texto:'Checar jumpeamento de cada PON da OLT', subitens:[]},
+      {id: uid(), texto:'Checar cadastro das caixas (CTOs) no sistema', subitens:[]},
+      {id: uid(), texto:'Validar potência óptica (Tx/Rx) nas portas ativas', subitens:[]},
+      {id: uid(), texto:'Provisionar e testar autenticação de uma ONU de teste', subitens:[]},
+      {id: uid(), texto:'Documentar a central no inventário / topologia', subitens:[]},
+    ]
+  }];
+}
+function seedKb(){
+  return [{
+    id: uid(),
+    titulo: 'Cliente sem sinal — ONU não autentica',
+    tags: ['onu','sem sinal','pppoe'],
+    solucao: '1) Confirmar sinal óptico na ONU (deve estar entre -8 e -27 dBm).\n2) Verificar se a ONU aparece na lista de descobertas da OLT.\n3) Checar se o cabo/conector na CTO está limpo e sem dano.\n4) Confirmar perfil de provisionamento correto no sistema.\n5) Se sinal ok e não autentica, reiniciar ONU e reprovisionar.\n6) Persistindo, escalar para N3 com prints do sinal e log da OLT.'
+  }];
+}
+
+/* ---------------- TABS ---------------- */
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.getElementById('sidebar-checklists').style.display = tab==='checklists' ? 'flex':'none';
+  document.getElementById('sidebar-kb').style.display = tab==='kb' ? 'flex':'none';
+  document.getElementById('view-checklists').style.display = tab==='checklists' ? 'block':'none';
+  document.getElementById('view-kb').style.display = tab==='kb' ? 'block':'none';
+  if(tab==='kb'){ renderKbList(); renderKbView(); }
+}
+
+/* ================= PROCESSOS ================= */
+function renderProcList(){
+  const newBtn = document.getElementById('newProcBtn');
+  if(newBtn) newBtn.disabled = !canEditChecklist();
+  const list = document.getElementById('procList');
+  if(!currentUser){
+    list.innerHTML = '<div class="list-empty">Faça login para ver os checklists.</div>';
+    return;
+  }
+  const q = document.getElementById('searchProc').value.toLowerCase();
+  const filtered = processos.filter(p => p.titulo.toLowerCase().includes(q) || (p.categoria||'').toLowerCase().includes(q));
+  if(!filtered.length){
+    list.innerHTML = `<div class="list-empty">Nenhum processo encontrado.${canEditChecklist() ? '<br>Crie um novo processo para começar.' : '<br>Peça a um admin/editor para cadastrar um modelo.' }</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(p=>{
+    const done = p.itens.filter(i=>isItemChecked(p.id, i)).length;
+    return `<div class="list-item ${p.id===activeProcId?'active':''}" onclick="selectProc('${p.id}')">
+      <div class="list-item-title">${escapeHtml(p.titulo)||'(sem título)'}</div>
+      <div class="list-item-meta"><span class="badge">${escapeHtml(p.categoria||'geral')}</span><span>${done}/${p.itens.length} itens (seu progresso)</span></div>
+    </div>`;
+  }).join('');
+}
+function selectProc(id){ activeProcId = id; renderProcList(); renderChecklistView(); }
+
+function criarProcesso(){
+  if(!canEditChecklist()) return;
+  const novo = {id: uid(), titulo:'', categoria:'Geral', site:'', itens:[]};
+  processos.unshift(novo);
+  activeProcId = novo.id;
+  saveProcessos();
+  renderProcList();
+  renderChecklistView();
+  setTimeout(()=>{ const el = document.getElementById('procTitleInput'); if(el) el.focus(); },50);
+}
+function excluirProcesso(id){
+  if(!canEditChecklist()) return;
+  if(!confirm('Excluir este processo permanentemente? Isso remove o modelo para todo mundo.')) return;
+  processos = processos.filter(p=>p.id!==id);
+  if(activeProcId===id) activeProcId = processos.length ? processos[0].id : null;
+  saveProcessos();
+  renderProcList();
+  renderChecklistView();
+}
+function duplicarProcesso(id){
+  if(!canEditChecklist()) return;
+  const p = processos.find(x=>x.id===id);
+  if(!p) return;
+  const copy = JSON.parse(JSON.stringify(p));
+  copy.id = uid();
+  copy.titulo = p.titulo + ' (cópia)';
+  copy.itens.forEach(i=>{ i.id=uid(); (i.subitens||[]).forEach(s=>{s.id=uid();}); });
+  processos.unshift(copy);
+  activeProcId = copy.id;
+  saveProcessos();
+  renderProcList();
+  renderChecklistView();
+}
+
+function getProc(){ return processos.find(p=>p.id===activeProcId); }
+
+/* Estrutura do checklist (título, itens, sub-itens de texto) é MESTRE — só admin/editor edita.
+   Marcação de check, notas e horário são PESSOAIS de cada usuário logado. */
+function canEditChecklist(){ return currentUser && (currentUser.role==='admin' || currentUser.role==='editor'); }
+
+const saveProgress = () => currentUser && saveKey('progress_'+currentUser.username, userProgress);
+function getItemState(procId, itemId){
+  const up = userProgress[procId];
+  const st = up && up.items && up.items[itemId];
+  return st || {checked:false, nota:'', horario:''};
+}
+function setItemState(procId, itemId, patch){
+  if(!currentUser) return;
+  userProgress[procId] = userProgress[procId] || {items:{}, subitems:{}};
+  userProgress[procId].items[itemId] = Object.assign({}, getItemState(procId,itemId), patch);
+  saveProgress();
+}
+function getSubState(procId, subId){
+  const up = userProgress[procId];
+  const st = up && up.subitems && up.subitems[subId];
+  return st || {checked:false};
+}
+function setSubState(procId, subId, patch){
+  if(!currentUser) return;
+  userProgress[procId] = userProgress[procId] || {items:{}, subitems:{}};
+  userProgress[procId].subitems[subId] = Object.assign({}, getSubState(procId,subId), patch);
+  saveProgress();
+}
+
+function isItemChecked(procId, it){
+  if(it.subitens && it.subitens.length) return it.subitens.every(s=>getSubState(procId, s.id).checked);
+  return !!getItemState(procId, it.id).checked;
+}
+
+function renderChecklistView(){
+  const view = document.getElementById('view-checklists');
+
+  if(!currentUser){
+    view.innerHTML = `<div class="doc">${renderAuthScreen('cl')}</div>`;
+    return;
+  }
+
+  const editable = canEditChecklist();
+  const authBar = `
+    <div class="auth-bar">
+      <div class="auth-info">
+        logado como <b style="color:var(--text)">${escapeHtml(currentUser.username)}</b>
+        <span class="role-pill ${currentUser.role}">${currentUser.role}</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        ${currentUser.role==='admin' ? `<button class="btn" onclick="toggleUserAdmin()">👤 Gerenciar usuários</button>` : ''}
+        <button class="btn btn-ghost" onclick="logout()">Sair</button>
+      </div>
+    </div>
+    <div id="userAdminPanel"></div>
+  `;
+
+  const p = getProc();
+  if(!p){
+    view.innerHTML = `<div class="doc">${authBar}<div class="empty-state" style="height:auto;padding:40px 0;"><div class="glyph">::</div><p>Nenhum processo selecionado.${editable ? ' Crie um novo processo à esquerda para montar um checklist de tarefa.' : ' Peça a um admin/editor para cadastrar um modelo de checklist.'}</p></div></div>`;
+    return;
+  }
+  const total = p.itens.length;
+  const done = p.itens.filter(i=>isItemChecked(p.id, i)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const titleField = editable
+    ? `<input id="procTitleInput" class="doc-title-input" placeholder="Título do processo (ex: Ativação de nova central)" value="${escapeAttr(p.titulo)}" oninput="updateProcTitle(this.value)">`
+    : `<div class="doc-title-input" style="cursor:default;">${escapeHtml(p.titulo)||'(sem título)'}</div>`;
+
+  const metaRow = editable ? `
+        <div class="meta-row">
+          <div class="meta-field"><label>Categoria</label><input value="${escapeAttr(p.categoria)}" oninput="updateProcField('categoria', this.value)"></div>
+          <div class="meta-field"><label>Site / Central</label><input value="${escapeAttr(p.site)}" placeholder="ex: OLT-Ibatiba-03" oninput="updateProcField('site', this.value)"></div>
+        </div>` : `
+        <div class="meta-row">
+          <div class="meta-field"><label>Categoria</label><div style="font-size:12.5px;padding:6px 0;">${escapeHtml(p.categoria)||'geral'}</div></div>
+          <div class="meta-field"><label>Site / Central</label><div style="font-size:12.5px;padding:6px 0;">${escapeHtml(p.site)||'—'}</div></div>
+          <div class="meta-field"><label>Preenchido por</label><div style="font-size:12.5px;padding:6px 0;">${escapeHtml(currentUser.username)}</div></div>
+        </div>`;
+
+  view.innerHTML = `
+    <div class="doc">
+      ${authBar}
+      <div class="doc-header">
+        <div class="doc-eyebrow">Processo &middot; ${escapeHtml(p.categoria||'geral')} ${!editable ? '&middot; seu progresso pessoal' : ''}</div>
+        ${titleField}
+        ${metaRow}
+      </div>
+
+      <div class="toolrow">
+        <button class="btn btn-accent" onclick="gerarPdfProcesso()">⇩ Gerar PDF</button>
+        <button class="btn" onclick="resetarChecklist()">↺ Reiniciar meu checklist</button>
+        ${editable ? `<button class="btn" onclick="duplicarProcesso('${p.id}')">⧉ Duplicar</button>` : ''}
+        ${editable ? `<button class="btn btn-ghost btn-red" onclick="excluirProcesso('${p.id}')">🗑 Excluir</button>` : ''}
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label">${done} de ${total} etapas concluídas (seu progresso) &middot; ${pct}%</div>
+      </div>
+
+      <div class="items" id="itemsWrap"></div>
+
+      ${editable ? `
+      <div class="add-item-row">
+        <input class="add-item-input" id="newItemInput" placeholder="+ adicionar etapa de checagem e pressionar Enter" onkeydown="if(event.key==='Enter'){addItem(this.value);this.value='';}">
+      </div>
+      <div class="subitem-hint">dica: use o campo "+ dividir em sub-itens" em cada etapa para separar a checagem (ex: ping / SNMP / gerência) — a etapa marca sozinha quando todos os sub-itens forem concluídos. Cada pessoa marca seu próprio progresso, sem afetar o de ninguém.</div>
+      ` : `
+      <div class="subitem-hint">Este é o modelo de checklist cadastrado pelo admin/editor. Marque as etapas conforme for concluindo — seu progresso é só seu, ninguém mais vê ou altera.</div>
+      `}
+    </div>
+  `;
+  renderItems();
+}
+
+function renderItems(){
+  const p = getProc();
+  const wrap = document.getElementById('itemsWrap');
+  if(!wrap) return;
+  const editable = canEditChecklist();
+  if(!p.itens.length){
+    wrap.innerHTML = `<div class="section-hint">Ainda não há etapas.${editable ? ' Adicione as checagens necessárias para esta tarefa abaixo (ex: "verificar comunicação com a OLT").' : ' Peça a um admin/editor para cadastrar as etapas deste modelo.'}</div>`;
+    return;
+  }
+  wrap.innerHTML = p.itens.map((it,idx)=>{
+    const itState = getItemState(p.id, it.id);
+    const hasSubs = it.subitens && it.subitens.length;
+    const checked = isItemChecked(p.id, it);
+    const subsHtml = hasSubs ? `<div class="subitems">${it.subitens.map(s=>{
+        const sChecked = getSubState(p.id, s.id).checked;
+        return `
+        <div class="subitem">
+          <div class="checkbox small ${sChecked?'on':''}" onclick="toggleSubItem('${it.id}','${s.id}')">${sChecked?'✓':''}</div>
+          <div class="subitem-text-view ${sChecked?'done':''}" ${editable?'contenteditable="true"':''}
+               ${editable?`onblur="updateSubText('${it.id}','${s.id}', this.innerText)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"`:''}>${escapeHtml(s.texto)}</div>
+          ${editable?`<button class="sub-remove" onclick="removeSubItem('${it.id}','${s.id}')">✕</button>`:''}
+        </div>`;}).join('')}
+        ${editable?`<input class="add-subitem-input" placeholder="+ sub-item e Enter (ex: checar SNMP)" onkeydown="if(event.key==='Enter'){addSubItem('${it.id}', this.value); this.value='';}">`:''}
+      </div>` : (editable ? `<div style="margin-top:6px;">
+        <input class="add-subitem-input" placeholder="+ dividir em sub-itens (opcional) e Enter" onkeydown="if(event.key==='Enter'){addSubItem('${it.id}', this.value); this.value='';}">
+      </div>` : '');
+
+    return `
+    <div class="item ${checked?'checked':''}">
+      <div class="item-num">${String(idx+1).padStart(2,'0')}</div>
+      <div class="checkbox ${checked?'on':''} ${hasSubs?'auto':''}" onclick="toggleItem('${it.id}')" title="${hasSubs?'marca automaticamente quando todos os sub-itens forem concluídos (clique alterna todos)':''}">${checked?'✓':''}</div>
+      <div class="item-body">
+        <div class="item-text-view ${checked?'done':''}" ${editable?'contenteditable="true"':''}
+             ${editable?`onblur="updateItemText('${it.id}', this.innerText)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"`:''}>${escapeHtml(it.texto)}</div>
+        ${subsHtml}
+        <textarea class="item-note" placeholder="observação (opcional, só sua)" oninput="autoGrow(this); updateItemNote('${it.id}', this.value)" onfocus="autoGrow(this)">${escapeHtml(itState.nota||'')}</textarea>
+        ${itState.horario ? `<div class="item-time">marcado às ${escapeHtml(itState.horario)}</div>` : ''}
+      </div>
+      ${editable ? `
+      <div class="item-actions">
+        <div class="icon-btn" onclick="moveItem('${it.id}',-1)" title="mover para cima">↑</div>
+        <div class="icon-btn" onclick="moveItem('${it.id}',1)" title="mover para baixo">↓</div>
+        <div class="icon-btn" onclick="removeItem('${it.id}')" title="remover etapa">✕</div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.item-note').forEach(t=>autoGrow(t));
+}
+function autoGrow(el){ el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
+
+function updateProcTitle(v){ if(!canEditChecklist()) return; const p=getProc(); p.titulo=v; saveProcessos(); renderProcList(); }
+function updateProcField(field, v){ if(!canEditChecklist()) return; const p=getProc(); p[field]=v; saveProcessos(); if(field==='categoria') renderProcList(); }
+
+function addItem(text){
+  if(!canEditChecklist()) return;
+  if(!text.trim()) return;
+  const p = getProc();
+  p.itens.push({id:uid(), texto:text.trim(), subitens:[]});
+  saveProcessos();
+  renderItems();
+  renderProcList();
+  document.getElementById('newItemInput').focus();
+}
+function removeItem(id){
+  if(!canEditChecklist()) return;
+  const p = getProc();
+  p.itens = p.itens.filter(i=>i.id!==id);
+  saveProcessos();
+  renderItems();
+  renderProcList();
+}
+/* Marcação de check é PESSOAL — cada usuário logado tem seu próprio progresso, sem conflito com os demais. */
+function toggleItem(id){
+  if(!currentUser) return;
+  const p = getProc();
+  const it = p.itens.find(i=>i.id===id);
+  if(it.subitens && it.subitens.length){
+    const allChecked = it.subitens.every(s=>getSubState(p.id, s.id).checked);
+    it.subitens.forEach(s=> setSubState(p.id, s.id, {checked: !allChecked}));
+    setItemState(p.id, id, {horario: !allChecked ? nowStr() : ''});
+  } else {
+    const cur = getItemState(p.id, id);
+    setItemState(p.id, id, {checked: !cur.checked, horario: !cur.checked ? nowStr() : ''});
+  }
+  renderItems();
+  renderProcList();
+  updateProgressOnly();
+}
+function toggleSubItem(itemId, subId){
+  if(!currentUser) return;
+  const p = getProc();
+  const it = p.itens.find(i=>i.id===itemId);
+  const cur = getSubState(p.id, subId);
+  setSubState(p.id, subId, {checked: !cur.checked});
+  const allChecked = it.subitens.every(x=>getSubState(p.id, x.id).checked);
+  setItemState(p.id, itemId, {horario: allChecked ? nowStr() : ''});
+  renderItems();
+  renderProcList();
+  updateProgressOnly();
+}
+function addSubItem(itemId, text){
+  if(!canEditChecklist()) return;
+  if(!text.trim()) return;
+  const p = getProc();
+  const it = p.itens.find(i=>i.id===itemId);
+  it.subitens = it.subitens || [];
+  it.subitens.push({id:uid(), texto:text.trim()});
+  saveProcessos();
+  renderItems();
+  renderProcList();
+}
+function removeSubItem(itemId, subId){
+  if(!canEditChecklist()) return;
+  const p = getProc();
+  const it = p.itens.find(i=>i.id===itemId);
+  it.subitens = it.subitens.filter(s=>s.id!==subId);
+  saveProcessos();
+  renderItems();
+  renderProcList();
+  updateProgressOnly();
+}
+function updateSubText(itemId, subId, text){
+  if(!canEditChecklist()) return;
+  const p = getProc();
+  const it = p.itens.find(i=>i.id===itemId);
+  const s = it.subitens.find(x=>x.id===subId);
+  s.texto = text.trim();
+  saveProcessos();
+}
+function updateItemText(id, text){
+  if(!canEditChecklist()) return;
+  const p = getProc();
+  const it = p.itens.find(i=>i.id===id);
+  it.texto = text.trim();
+  saveProcessos();
+  renderProcList();
+}
+/* Nota é PESSOAL — vai para o progresso do usuário logado, não para o modelo mestre. */
+function updateItemNote(id, text){
+  if(!currentUser) return;
+  const p = getProc();
+  setItemState(p.id, id, {nota:text});
+}
+function moveItem(id, dir){
+  if(!canEditChecklist()) return;
+  const p = getProc();
+  const idx = p.itens.findIndex(i=>i.id===id);
+  const newIdx = idx+dir;
+  if(newIdx<0 || newIdx>=p.itens.length) return;
+  [p.itens[idx], p.itens[newIdx]] = [p.itens[newIdx], p.itens[idx]];
+  saveProcessos();
+  renderItems();
+}
+function updateProgressOnly(){
+  const p = getProc();
+  const total = p.itens.length;
+  const done = p.itens.filter(i=>isItemChecked(p.id, i)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const fill = document.querySelector('.progress-fill');
+  const label = document.querySelector('.progress-label');
+  if(fill){ fill.style.width = pct+'%'; }
+  if(label){ label.textContent = `${done} de ${total} etapas concluídas (seu progresso) · ${pct}%`; }
+}
+function resetarChecklist(){
+  if(!currentUser) return;
+  if(!confirm('Desmarcar suas etapas e limpar suas observações neste checklist? (não afeta outras pessoas)')) return;
+  const p = getProc();
+  delete userProgress[p.id];
+  saveProgress();
+  renderChecklistView();
+}
+
+/* ---------------- PDF EXPORT ---------------- */
+function gerarPdfProcesso(){
+  const p = getProc();
+  if(!p || !currentUser) return;
+  const total = p.itens.length;
+  const done = p.itens.filter(i=>isItemChecked(p.id, i)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const itemsHtml = p.itens.map((it,idx)=>{
+    const checked = isItemChecked(p.id, it);
+    const itState = getItemState(p.id, it.id);
+    const subsHtml = (it.subitens||[]).map(s=>`
+      <div class="p-sub"><div class="p-box">${getSubState(p.id,s.id).checked?'✓':''}</div><div class="p-sub-text">${escapeHtml(s.texto)}</div></div>
+    `).join('');
+    return `
+    <div class="p-item">
+      <div class="p-item-row">
+        <div class="p-box">${checked?'✓':''}</div>
+        <div style="flex:1;">
+          <div class="p-item-text ${checked?'done':''}">${String(idx+1).padStart(2,'0')}. ${escapeHtml(it.texto)}</div>
+        </div>
+      </div>
+      ${subsHtml}
+      ${itState.nota ? `<div class="p-note">Obs: ${escapeHtml(itState.nota)}</div>` : ''}
+      ${itState.horario ? `<div class="p-time">marcado às ${escapeHtml(itState.horario)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('print-area').innerHTML = `
+    <div class="p-header">
+      <div class="p-eyebrow">Checklist de Processo &middot; ${escapeHtml(p.categoria||'geral')}</div>
+      <h1 class="p-title">${escapeHtml(p.titulo || 'Processo sem título')}</h1>
+      <div class="p-meta">
+        <div><b>Site/Central:</b> ${escapeHtml(p.site)||'—'}</div>
+        <div><b>Preenchido por:</b> ${escapeHtml(currentUser.username)}</div>
+        <div><b>Data de emissão:</b> ${new Date().toLocaleString('pt-BR')}</div>
+      </div>
+    </div>
+    <div class="p-progress">${done}/${total} etapas concluídas — ${pct}%</div>
+    ${itemsHtml || '<div style="font-size:12px;color:#888;">Nenhuma etapa cadastrada.</div>'}
+    <div class="p-footer"><span>Gerado pelo Runbook NOC</span><span>${new Date().toLocaleDateString('pt-BR')}</span></div>
+  `;
+  window.print();
+}
+
+/* ================= KB + AUTH ================= */
+function renderKbList(){
+  const list = document.getElementById('kbList');
+  const newBtn = document.getElementById('newKbBtn');
+  newBtn.disabled = !canEditKb();
+  if(!currentUser){
+    list.innerHTML = '<div class="list-empty">Faça login para ver as entradas da base de conhecimento.</div>';
+    return;
+  }
+  const q = document.getElementById('searchKb').value.toLowerCase();
+  const filtered = kbEntries.filter(k =>
+    k.titulo.toLowerCase().includes(q) || (k.tags||[]).some(t=>t.toLowerCase().includes(q))
+  );
+  if(!filtered.length){
+    list.innerHTML = '<div class="list-empty">Nenhuma entrada encontrada.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(k=>`
+    <div class="list-item ${k.id===activeKbId?'active':''}" onclick="selectKb('${k.id}')">
+      <div class="list-item-title">${escapeHtml(k.titulo)||'(sem título)'}</div>
+      <div class="list-item-meta">${(k.tags||[]).slice(0,3).map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+function selectKb(id){ activeKbId=id; renderKbList(); renderKbView(); }
+
+function canEditKb(){ return currentUser && (currentUser.role==='admin' || currentUser.role==='editor'); }
+
+function criarKb(){
+  if(!canEditKb()) return;
+  const novo = {id: uid(), titulo:'', tags:[], solucao:''};
+  kbEntries.unshift(novo);
+  activeKbId = novo.id;
+  saveKb();
+  renderKbList();
+  renderKbView();
+}
+function excluirKb(id){
+  if(!canEditKb()) return;
+  if(!confirm('Excluir esta entrada da base de conhecimento?')) return;
+  kbEntries = kbEntries.filter(k=>k.id!==id);
+  if(activeKbId===id) activeKbId = kbEntries.length ? kbEntries[0].id : null;
+  saveKb();
+  renderKbList();
+  renderKbView();
+}
+function getKb(){ return kbEntries.find(k=>k.id===activeKbId); }
+
+function renderKbView(){
+  const view = document.getElementById('view-kb');
+
+  if(!currentUser){
+    view.innerHTML = renderAuthScreen('kb');
+    return;
+  }
+
+  const editable = canEditKb();
+  let authBar = `
+    <div class="auth-bar">
+      <div class="auth-info">
+        logado como <b style="color:var(--text)">${escapeHtml(currentUser.username)}</b>
+        <span class="role-pill ${currentUser.role}">${currentUser.role}</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        ${currentUser.role==='admin' ? `<button class="btn" onclick="toggleUserAdmin()">👤 Gerenciar usuários</button>` : ''}
+        <button class="btn btn-ghost" onclick="logout()">Sair</button>
+      </div>
+    </div>
+    <div id="userAdminPanel"></div>
+  `;
+
+  const k = getKb();
+  let body;
+  if(!k){
+    body = `<div class="empty-state" style="height:auto;padding:40px 0;"><div class="glyph">?</div><p>Nenhuma entrada selecionada.${editable?' Crie uma nova entrada à esquerda.':''}</p></div>`;
+  } else {
+    body = `
+      <div class="section-hint">${editable ? 'Cadastre problemas recorrentes de campo e a solução padrão. Use "copiar resposta" para colar no chat com o técnico.' : 'Você tem acesso somente leitura a esta base. Use "copiar resposta" para colar no chat com o técnico.'}</div>
+      <div class="kb-card">
+        <div class="kb-card-head">
+          <input class="kb-title-input" ${editable?'':'disabled'} placeholder="Problema (ex: Cliente sem sinal — ONU não autentica)" value="${escapeAttr(k.titulo)}" oninput="updateKbField('titulo', this.value)">
+          ${editable ? `<div class="icon-btn" onclick="excluirKb('${k.id}')" title="excluir">✕</div>` : ''}
+        </div>
+        <div class="kb-tags" id="kbTags">
+          ${(k.tags||[]).map(t=>`<span class="tag-pill">${escapeHtml(t)}${editable?`<button onclick="removeTag('${t}')">✕</button>`:''}</span>`).join('')}
+          ${editable ? `<input class="tag-input" placeholder="+ tag" onkeydown="if(event.key==='Enter'){addTag(this.value);this.value='';}">` : ''}
+        </div>
+        <textarea class="kb-solution" ${editable?'':'disabled'} placeholder="Passo a passo da solução..." oninput="autoGrow(this); updateKbField('solucao', this.value)" onfocus="autoGrow(this)">${escapeHtml(k.solucao)}</textarea>
+        <div class="kb-foot">
+          <span style="font-family:var(--mono);font-size:10.5px;color:var(--muted-2);">id ${k.id}</span>
+          <button class="copy-btn" id="copyBtn" onclick="copiarSolucao()">⧉ copiar resposta</button>
+        </div>
+        ${!editable ? '<div class="readonly-note">🔒 somente leitura — peça a um admin/editor para alterar esta entrada</div>' : ''}
+      </div>
+    `;
+  }
+
+  view.innerHTML = `<div class="doc">${authBar}${body}</div>`;
+  const ta = view.querySelector('.kb-solution');
+  if(ta) autoGrow(ta);
+}
+
+/* ---- auth screen ----
+   ctx diferencia a tela exibida na aba Checklists ('cl') da aba KB ('kb'),
+   pois as duas podem estar no DOM ao mesmo tempo (uma só fica escondida) —
+   sem isso os campos de usuário/senha teriam IDs duplicados e um roubaria o valor do outro. */
+function renderAuthScreen(ctx){
+  ctx = ctx || 'kb';
+  const isLogin = authView==='login';
+  const switchFn = isLogin ? `authView='register'` : `authView='login'`;
+  const rerender = ctx==='cl' ? 'renderChecklistView()' : 'renderKbView()';
+  return `
+    <div class="auth-card">
+      <h3>${isLogin ? 'Entrar no Runbook NOC' : 'Criar conta'}</h3>
+      <p>${kbUsers.length===0 && !isLogin ? 'Nenhum usuário cadastrado ainda — a primeira conta criada vira administradora automaticamente.' : (isLogin ? 'Acesso controlado por usuário/senha. Cada pessoa mantém seu próprio progresso de checklist; só administradores e editores podem alterar modelos e a base de conhecimento.' : 'Contas novas entram como leitura (viewer). Um admin pode promover depois.')}</p>
+      <div class="auth-field"><label>Usuário</label><input id="authUser_${ctx}" autocomplete="username" placeholder="ex: joao.noc"></div>
+      <div class="auth-field"><label>Senha</label><input id="authPass_${ctx}" type="password" autocomplete="${isLogin?'current-password':'new-password'}" placeholder="••••••••"></div>
+      <div class="auth-error" id="authError_${ctx}"></div>
+      <button class="btn btn-accent" style="width:100%;justify-content:center;" onclick="${isLogin?`doLogin('${ctx}')`:`doRegister('${ctx}')`}">${isLogin?'Entrar':'Criar conta'}</button>
+      <div class="auth-switch">
+        ${isLogin
+          ? `Ainda não tem conta? <a onclick="${switchFn}; ${rerender};">Criar conta</a>`
+          : `Já tem conta? <a onclick="${switchFn}; ${rerender};">Entrar</a>`}
+      </div>
+    </div>
+  `;
+}
+/** Busca a lista de usuários direto do backend (ignorando o que está em memória),
+ *  usado logo antes de qualquer criação/alteração/remoção de usuário — assim
+ *  evitamos decidir "sou o primeiro usuário" ou sobrescrever o backend com uma
+ *  cópia desatualizada só porque o sync tinha falhado num carregamento anterior. */
+async function refreshKbUsers(){
+  if(!isConfigured()) return;
+  try{
+    const remote = await remoteGet('kb_users');
+    if(remote){ kbUsers = remote; }
+  }catch(e){
+    console.error('não foi possível confirmar a lista de usuários antes de salvar', e);
+    // segue com o que já está em memória; melhor que travar a ação por completo
+  }
+}
+
+async function doRegister(ctx){
+  const username = document.getElementById('authUser_'+ctx).value.trim();
+  const pass = document.getElementById('authPass_'+ctx).value;
+  const err = document.getElementById('authError_'+ctx);
+  if(!username || !pass){ err.textContent = 'Preencha usuário e senha.'; return; }
+  if(pass.length < 4){ err.textContent = 'Senha muito curta (mínimo 4 caracteres).'; return; }
+  err.textContent = '';
+  await refreshKbUsers();
+  if(kbUsers.some(u=>u.username.toLowerCase()===username.toLowerCase())){ err.textContent = 'Usuário já existe.'; return; }
+  const role = kbUsers.length===0 ? 'admin' : 'viewer';
+  const passHash = await sha256(pass);
+  kbUsers.push({username, passHash, role});
+  await saveUsers();
+  currentUser = {username, role};
+  localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+  userProgress = await loadKey('progress_'+username, () => ({}));
+  renderKbList();
+  renderKbView();
+  renderProcList();
+  renderChecklistView();
+}
+async function doLogin(ctx){
+  const username = document.getElementById('authUser_'+ctx).value.trim();
+  const pass = document.getElementById('authPass_'+ctx).value;
+  const err = document.getElementById('authError_'+ctx);
+  await refreshKbUsers();
+  const user = kbUsers.find(u=>u.username.toLowerCase()===username.toLowerCase());
+  if(!user){ err.textContent = 'Usuário não encontrado.'; return; }
+  const passHash = await sha256(pass);
+  if(passHash !== user.passHash){ err.textContent = 'Senha incorreta.'; return; }
+  currentUser = {username:user.username, role:user.role};
+  localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+  userProgress = await loadKey('progress_'+user.username, () => ({}));
+  renderKbList();
+  renderKbView();
+  renderProcList();
+  renderChecklistView();
+}
+function logout(){
+  currentUser = null;
+  userProgress = {};
+  localStorage.removeItem(SESSION_KEY);
+  authView = 'login';
+  renderKbList();
+  renderKbView();
+  renderProcList();
+  renderChecklistView();
+}
+async function toggleUserAdmin(){
+  const panel = document.getElementById('userAdminPanel');
+  if(panel.innerHTML){ panel.innerHTML=''; return; }
+  panel.innerHTML = `<div class="kb-card"><div class="modal-sub">Carregando usuários...</div></div>`;
+  await refreshKbUsers();
+  panel.innerHTML = `
+    <div class="kb-card">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.6px;">Gerenciar usuários</div>
+      <table class="user-table">
+        <thead><tr><th>Usuário</th><th>Papel</th><th></th></tr></thead>
+        <tbody>
+          ${kbUsers.map(u=>`
+            <tr>
+              <td>${escapeHtml(u.username)}</td>
+              <td>
+                <select onchange="changeUserRole('${u.username}', this.value)" ${u.username===currentUser.username?'disabled title="não é possível alterar seu próprio papel"':''}>
+                  <option value="viewer" ${u.role==='viewer'?'selected':''}>viewer (leitura)</option>
+                  <option value="editor" ${u.role==='editor'?'selected':''}>editor</option>
+                  <option value="admin" ${u.role==='admin'?'selected':''}>admin</option>
+                </select>
+              </td>
+              <td>${u.username===currentUser.username ? '' : `<div class="icon-btn" onclick="deleteUser('${u.username}')" title="remover usuário">✕</div>`}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="readonly-note">⚠️ isto é um controle de acesso simples, do lado do cliente — adequado para organizar permissões da equipe, mas não deve ser usado para proteger dados sigilosos, pois a base fica acessível a quem tiver o link/artefato.</div>
+    </div>
+  `;
+}
+async function changeUserRole(username, role){
+  await refreshKbUsers();
+  const u = kbUsers.find(x=>x.username===username);
+  if(u){ u.role = role; await saveUsers(); }
+  document.getElementById('userAdminPanel').innerHTML='';
+  await toggleUserAdmin();
+  renderKbView();
+}
+async function deleteUser(username){
+  if(!confirm(`Remover o usuário "${username}"?`)) return;
+  await refreshKbUsers();
+  kbUsers = kbUsers.filter(u=>u.username!==username);
+  await saveUsers();
+  document.getElementById('userAdminPanel').innerHTML='';
+  await toggleUserAdmin();
+  renderKbView();
+}
+
+function updateKbField(field, v){ if(!canEditKb()) return; const k=getKb(); k[field]=v; saveKb(); if(field==='titulo') renderKbList(); }
+function addTag(t){
+  if(!canEditKb()) return;
+  t = t.trim();
+  if(!t) return;
+  const k = getKb();
+  k.tags = k.tags || [];
+  if(!k.tags.includes(t)) k.tags.push(t);
+  saveKb();
+  renderKbList();
+  renderKbView();
+}
+function removeTag(t){
+  if(!canEditKb()) return;
+  const k = getKb();
+  k.tags = (k.tags||[]).filter(x=>x!==t);
+  saveKb();
+  renderKbList();
+  renderKbView();
+}
+function copiarSolucao(){
+  const k = getKb();
+  const text = `${k.titulo}\n\n${k.solucao}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copyBtn');
+    btn.classList.add('copied');
+    btn.textContent = '✓ copiado';
+    setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent='⧉ copiar resposta'; }, 1600);
+  });
+}
+
+/* ---------------- UTIL ---------------- */
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* ---------------- INIT ---------------- */
+loadAll();
+</script>
+</body>
+</html>
